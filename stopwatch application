@@ -1,83 +1,99 @@
-package com.example.stopwatch;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import androidx.appcompat.app.AppCompatActivity;
+public class StopwatchApp extends JFrame {
+    private JButton startButton, stopButton, resetButton;
+    private JLabel timeLabel;
+    private Timer timer;
+    private int elapsedTime = 0;
+    private boolean isRunning = false;
 
-import android.os.Bundle;
-import android.os.Handler;
-import android.view.View;
+    public StopwatchApp() {
+        setTitle("Stopwatch Application");
+        setSize(300, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-import com.example.stopwatch.databinding.ActivityMainBinding;
+        timeLabel = new JLabel("00:00:00");
+        timeLabel.setFont(new Font("Verdana", Font.PLAIN, 32));
+        timeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        add(timeLabel, BorderLayout.CENTER);
 
-import java.util.Locale;
+        startButton = new JButton("Start");
+        stopButton = new JButton("Stop");
+        resetButton = new JButton("Reset");
 
-public class MainActivity extends AppCompatActivity {
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(startButton);
+        buttonPanel.add(stopButton);
+        buttonPanel.add(resetButton);
+        add(buttonPanel, BorderLayout.SOUTH);
 
-    private int second =0;
-    private boolean running;
-    private boolean wasRunning;
-    ActivityMainBinding binding;
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        binding=ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-        getSupportActionBar().hide();
-        if(savedInstanceState!=null)
-        {
-            second=savedInstanceState.getInt("seconds");
-            running=savedInstanceState.getBoolean("running");
-            wasRunning=savedInstanceState.getBoolean("wasRunning");
+        startButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                start();
+            }
+        });
+
+        stopButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                stop();
+            }
+        });
+
+        resetButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                reset();
+            }
+        });
+
+        timer = new Timer(1000, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                elapsedTime++;
+                updateDisplay();
+            }
+        });
+    }
+
+    private void start() {
+        if (!isRunning) {
+            timer.start();
+            isRunning = true;
+            startButton.setEnabled(false);
+            stopButton.setEnabled(true);
         }
-        Handler handler = new Handler();
-        handler.post(new Runnable() {
-            @Override
+    }
+
+    private void stop() {
+        if (isRunning) {
+            timer.stop();
+            isRunning = false;
+            startButton.setEnabled(true);
+            stopButton.setEnabled(false);
+        }
+    }
+
+    private void reset() {
+        elapsedTime = 0;
+        updateDisplay();
+        stop();
+    }
+
+    private void updateDisplay() {
+        int hours = elapsedTime / 3600;
+        int minutes = (elapsedTime % 3600) / 60;
+        int seconds = elapsedTime % 60;
+        timeLabel.setText(String.format("%02d:%02d:%02d", hours, minutes, seconds));
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                int hours =second/3600;
-                int minutes = (second%3600)/60;
-                int secs = second % 60;
-                String time=String.format(Locale.getDefault(),"%02d:%02d:%02d",hours,minutes,secs);
-                binding.textView.setText(time);
-                if(running)
-                {
-                    second++;
-                }
-                handler.postDelayed(this,1000);
+                new StopwatchApp().setVisible(true);
             }
         });
-        binding.start.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                running=true;
-
-            }
-        });
-        binding.stop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                running=false;
-                second=0;
-            }
-        });
-        binding.pause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                running=false;
-            }
-        });
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        wasRunning=running;
-        running=false;
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if(wasRunning){
-            running=true;
-        }
     }
 }
+
